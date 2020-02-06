@@ -77,9 +77,9 @@ function asyncHandler(cb) {
 router.get(
   "/courses",
   asyncHandler(async (req, res) => {
-    // TODO 200 List of courses and the user that owns each course
+    // 200 List of courses and the user that owns each course
     const courses = await Course.findAll({
-      include: [{ model: User, as: "User" }]
+      include: [User]
     });
     res
       .status(200)
@@ -91,15 +91,33 @@ router.get(
 router.get(
   "/courses/:id",
   asyncHandler(async (req, res) => {
-    // TODO 200 Returns a single course (including the user that owns the course) for the provided course ID
+    // 200 Returns a single course (including the user that owns the course) for the provided course ID
+    const course = await Course.findOne({
+      where: {
+        id: req.params.id
+      },
+      include: [User]
+    });
+
+    res
+      .status(200)
+      .json(course)
+      .end();
   })
 );
 
 router.post(
-  "/courses/:id",
+  "/courses",
   authenticateUser,
   asyncHandler(async (req, res) => {
-    // TODO 201 Creates a course, sets the Location header to the URI for the courses, and returns no content
+    // 201 Creates a course, sets the Location header to the URI for the courses, and returns no content
+    const course = req.body;
+    await Course.create(course);
+
+    res
+      .status(201)
+      .location("/")
+      .end();
   })
 );
 
@@ -107,7 +125,9 @@ router.put(
   "/courses/:id",
   authenticateUser,
   asyncHandler(async (req, res) => {
-    // TODO 204 Updates a course and returns no content
+    // 204 Updates a course and returns no content
+    await Course.update(req.body, { where: { id: req.body.id } });
+    res.status(204).end();
   })
 );
 
@@ -115,7 +135,9 @@ router.delete(
   "/courses/:id",
   authenticateUser,
   asyncHandler(async (req, res) => {
-    // TODO 204 Deletes a course and returns no content
+    // 204 Deletes a course and returns no content
+    await Course.destroy({ where: { id: req.params.id } });
+    res.status(204).end();
   })
 );
 

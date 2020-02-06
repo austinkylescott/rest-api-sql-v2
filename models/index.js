@@ -8,6 +8,13 @@ const db = { sequelize, Sequelize, models: {} };
 db.models.User = require("./User.js")(sequelize);
 db.models.Course = require("./Course.js")(sequelize);
 
+Object.keys(db.models).forEach(modelName => {
+  if (db.models[modelName].associate) {
+    console.info(`Configuring the associations for the ${modelName} model...`);
+    db.models[modelName].associate(db.models);
+  }
+});
+
 // Test database connection
 sequelize
   .authenticate()
