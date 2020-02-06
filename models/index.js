@@ -5,6 +5,8 @@ const sequelize = new Sequelize({
 });
 
 const db = { sequelize, Sequelize, models: {} };
+db.models.User = require("./User.js")(sequelize);
+db.models.Course = require("./Course.js")(sequelize);
 
 // Test database connection
 sequelize
