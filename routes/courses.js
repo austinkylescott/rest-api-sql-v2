@@ -79,7 +79,20 @@ router.get(
   asyncHandler(async (req, res) => {
     // 200 List of courses and the user that owns each course
     const courses = await Course.findAll({
-      include: [User]
+      attributes: [
+        "id",
+        "userId",
+        "title",
+        "description",
+        "estimatedTime",
+        "materialsNeeded"
+      ],
+      include: [
+        {
+          model: User,
+          attributes: ["id", "firstName", "lastName", "emailAddress"]
+        }
+      ]
     });
     res
       .status(200)
@@ -96,13 +109,33 @@ router.get(
       where: {
         id: req.params.id
       },
-      include: [User]
+      attributes: [
+        "id",
+        "userId",
+        "title",
+        "description",
+        "estimatedTime",
+        "materialsNeeded"
+      ],
+      include: [
+        {
+          model: User,
+          attributes: ["id", "firstName", "lastName", "emailAddress"]
+        }
+      ]
     });
 
-    res
-      .status(200)
-      .json(course)
-      .end();
+    if (course) {
+      res
+        .status(200)
+        .json(course)
+        .end();
+    } else {
+      res
+        .status(400)
+        .json({ message: "Course not found" })
+        .end();
+    }
   })
 );
 
@@ -112,12 +145,25 @@ router.post(
   asyncHandler(async (req, res) => {
     // 201 Creates a course, sets the Location header to the URI for the courses, and returns no content
     const course = req.body;
-    await Course.create(course);
+    try {
+      await Course.create(course);
 
-    res
-      .status(201)
-      .location("/")
-      .end();
+      res
+        .status(201)
+        .location("/")
+        .end();
+    } catch (error) {
+      if (
+        error.name === "SequelizeValidationError" ||
+        "SequelizeUniqueConstraintError"
+      ) {
+        error.message = error.errors.map(error => error.message);
+        console.warn(error.message);
+        res.status(400).end();
+      } else {
+        throw error;
+      }
+    }
   })
 );
 
@@ -126,8 +172,43 @@ router.put(
   authenticateUser,
   asyncHandler(async (req, res) => {
     // 204 Updates a course and returns no content
-    await Course.update(req.body, { where: { id: req.body.id } });
-    res.status(204).end();
+    const course = await Course.findByPk(req.params.id);
+    // Ensure course belongs to current authenticated user
+    if (course && course.userId == req.currentUser.id) {
+      // Ensure ids match tob confirm this is not a malformed request
+      if (req.params.id == req.body.id) {
+        // Ensure both title and description have been provided
+        if (req.body.title && req.body.description) {
+          course
+            .update(req.body)
+            .then(() => {
+              res
+                .status(204)
+                .json(course)
+                .end();
+            })
+            .catch(error => res.status(400).json({ message: error.message }));
+        } else {
+          res
+            .status(400)
+            .json({ message: "Both 'Title' and 'Description' are required." })
+            .end();
+        }
+      } else {
+        res
+          .status(400)
+          .json({
+            message:
+              "The supplied course ID does not match the course ID saved in database."
+          })
+          .end();
+      }
+    } else {
+      res
+        .status(403)
+        .json({ message: "You do not own this course." })
+        .end();
+    }
   })
 );
 
@@ -136,8 +217,16 @@ router.delete(
   authenticateUser,
   asyncHandler(async (req, res) => {
     // 204 Deletes a course and returns no content
-    await Course.destroy({ where: { id: req.params.id } });
-    res.status(204).end();
+    const course = await Course.findByPk(req.params.id);
+    if (course && course.userId == req.currentUser.id) {
+      await Course.destroy({ where: { id: req.params.id } });
+      res.status(204).end();
+    } else {
+      res
+        .status(403)
+        .json({ message: "You do not own this course." })
+        .end();
+    }
   })
 );
 

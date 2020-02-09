@@ -78,14 +78,13 @@ router.get(
   authenticateUser,
   asyncHandler(async (req, res) => {
     //  200 Returns the currently authenticated user
-    const user = req.body;
+    const user = req.currentUser;
     res
       .status(200)
       .json({
         username: user.emailAddress,
         firstName: user.firstName,
-        lastName: user.lastName,
-        password: user.password
+        lastName: user.lastName
       })
       .end();
   })
@@ -97,17 +96,29 @@ router.post(
   asyncHandler(async (req, res) => {
     // 201 Creates a user, sets the Location header to "/", and returns no content
     const user = req.body;
+    try {
+      if (user.password) {
+        user.password = bcryptjs.hashSync(user.password);
+      }
 
-    if (user.password) {
-      user.password = bcryptjs.hashSync(user.password);
+      await User.create(user);
+
+      res
+        .status(201)
+        .location("/")
+        .end();
+    } catch (error) {
+      if (
+        error.name === "SequelizeValidationError" ||
+        "SequelizeUniqueConstraintError"
+      ) {
+        error.message = error.errors.map(error => error.message);
+        console.warn(error.message);
+        res.status(400).end();
+      } else {
+        throw error;
+      }
     }
-
-    await User.create(user);
-
-    res
-      .status(201)
-      .location("/")
-      .end();
   })
 );
 

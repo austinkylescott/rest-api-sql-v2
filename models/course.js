@@ -14,6 +14,9 @@ module.exports = sequelize => {
         type: Sequelize.INTEGER,
         allowNull: false,
         validate: {
+          notNull: {
+            msg: '"UserId" is required.'
+          },
           notEmpty: {
             msg: '"UserId" is required.'
           }
@@ -23,6 +26,9 @@ module.exports = sequelize => {
         type: Sequelize.STRING,
         allowNull: false,
         validate: {
+          notNull: {
+            msg: "'Title' is required."
+          },
           notEmpty: {
             msg: '"Title" is required.'
           }
@@ -32,6 +38,9 @@ module.exports = sequelize => {
         type: Sequelize.TEXT,
         allowNull: false,
         validate: {
+          notNull: {
+            msg: "'Description' is required."
+          },
           notEmpty: {
             msg: '"Description" is required.'
           }
