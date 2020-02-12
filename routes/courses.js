@@ -150,7 +150,7 @@ router.post(
 
       res
         .status(201)
-        .location("/")
+        .location(`/courses/${course.id}`)
         .end();
     } catch (error) {
       if (
@@ -159,7 +159,10 @@ router.post(
       ) {
         error.message = error.errors.map(error => error.message);
         console.warn(error.message);
-        res.status(400).end();
+        res
+          .status(400)
+          .json(error.message)
+          .end();
       } else {
         throw error;
       }
@@ -175,7 +178,7 @@ router.put(
     const course = await Course.findByPk(req.params.id);
     // Ensure course belongs to current authenticated user
     if (course && course.userId == req.currentUser.id) {
-      // Ensure ids match tob confirm this is not a malformed request
+      // Ensure ids match to confirm this is not a malformed request
       if (req.params.id == req.body.id) {
         // Ensure both title and description have been provided
         if (req.body.title && req.body.description) {
@@ -187,14 +190,23 @@ router.put(
                 .json(course)
                 .end();
             })
-            .catch(error => res.status(400).json({ message: error.message }));
+            .catch(error =>
+              res
+                .status(400)
+                .json({ message: error.message })
+                .end()
+            );
         } else {
+          console.log("Both 'Title' and 'Description' are required.");
           res
             .status(400)
             .json({ message: "Both 'Title' and 'Description' are required." })
             .end();
         }
       } else {
+        console.log(
+          "The supplied course ID does not match the course ID saved in database."
+        );
         res
           .status(400)
           .json({
@@ -204,6 +216,7 @@ router.put(
           .end();
       }
     } else {
+      console.log("You do not own this course.");
       res
         .status(403)
         .json({ message: "You do not own this course." })

@@ -92,7 +92,6 @@ router.get(
 
 router.post(
   "/users",
-  authenticateUser,
   asyncHandler(async (req, res) => {
     // 201 Creates a user, sets the Location header to "/", and returns no content
     const user = req.body;
@@ -114,7 +113,10 @@ router.post(
       ) {
         error.message = error.errors.map(error => error.message);
         console.warn(error.message);
-        res.status(400).end();
+        res
+          .status(400)
+          .json(error.message)
+          .end();
       } else {
         throw error;
       }
