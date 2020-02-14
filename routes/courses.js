@@ -144,13 +144,13 @@ router.post(
   authenticateUser,
   asyncHandler(async (req, res) => {
     // 201 Creates a course, sets the Location header to the URI for the courses, and returns no content
-    const course = req.body;
+
     try {
-      await Course.create(course);
+      const newCourse = await Course.create(req.body);
 
       res
         .status(201)
-        .location(`/courses/${course.id}`)
+        .location(`/courses/${newCourse.id}`)
         .end();
     } catch (error) {
       if (
